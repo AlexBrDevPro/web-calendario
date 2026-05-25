@@ -28,5 +28,5 @@ googleProvider.setCustomParameters({ prompt: 'select_account' })
 // =========================================================================
 export const ALLOWED_EMAILS = [
   'alejandrobeamud@gmail.com',
-  // 'email-de-dalia@gmail.com', ← AÑADIR aquí
+   'elrincondedalia@gmail.com'
 ]
