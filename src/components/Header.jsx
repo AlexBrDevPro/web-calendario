@@ -20,12 +20,13 @@ export default function Header({
   mode, onModeChange,
   view, onViewChange,
   theme, onThemeToggle,
-  currentUser, onCurrentUserChange,
+  currentUser,
   filter, onFilterChange,
   periodLabel, onPrev, onNext, onToday,
   onCreate, onOpenCategories,
   authUser, onLogout,
 }) {
+  const me = USERS.find((u) => u.id === currentUser)
   return (
     <header className="sticky top-0 z-30 backdrop-blur border-b border-soft"
       style={{ backgroundColor: 'color-mix(in srgb, var(--surface) 85%, transparent)' }}>
@@ -37,12 +38,17 @@ export default function Header({
             </div>
             <div>
               <h1 className="text-base sm:text-lg font-bold text-fg leading-tight">Nuestro Calendario</h1>
-              <p className="text-xs text-fg-mut hidden sm:block">Para {USERS[0].name} & {USERS[1].name}</p>
+              {me ? (
+                <p className="text-xs text-fg-mut hidden sm:flex items-center gap-1">
+                  Hola, <strong style={{ color: me.color }}>{me.name}</strong>
+                </p>
+              ) : (
+                <p className="text-xs text-fg-mut hidden sm:block">Para {USERS[0].name} & {USERS[1].name}</p>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <UserSwitch current={currentUser} onChange={onCurrentUserChange} />
             <button onClick={onOpenCategories} className="btn btn-ghost !px-2.5 sm:!px-3" title="Categorías">
               <Tag className="w-4 h-4" />
               <span className="hidden md:inline">Categorías</span>
@@ -52,7 +58,7 @@ export default function Header({
               {theme === 'cookie' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
             <ModeToggle mode={mode} onChange={onModeChange} />
-            <AuthMenu user={authUser} onLogout={onLogout} />
+            <AuthMenu user={authUser} me={me} onLogout={onLogout} />
           </div>
         </div>
 
@@ -116,31 +122,6 @@ export default function Header({
   )
 }
 
-function UserSwitch({ current, onChange }) {
-  return (
-    <div className="inline-flex surface-2 rounded-full p-0.5 border border-soft" title="Quién eres tú">
-      {USERS.map((u) => {
-        const active = current === u.id
-        return (
-          <button key={u.id} onClick={() => onChange(u.id)}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-full transition"
-            style={active
-              ? { backgroundColor: u.color, color: '#fff' }
-              : { color: 'var(--fg-soft)' }}>
-            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold"
-              style={active
-                ? { backgroundColor: 'rgba(255,255,255,0.3)', color: '#fff' }
-                : { backgroundColor: u.color, color: '#fff' }}>
-              {u.initial}
-            </span>
-            <span className="hidden sm:inline">{u.name}</span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 function ModeToggle({ mode, onChange }) {
   const isEditor = mode === 'editor'
   return (
@@ -157,16 +138,18 @@ function ModeToggle({ mode, onChange }) {
   )
 }
 
-function AuthMenu({ user, onLogout }) {
+function AuthMenu({ user, me, onLogout }) {
   if (!user) return null
-  const initial = (user.displayName || user.email || '?').charAt(0).toUpperCase()
+  const initial = (me ? me.initial : (user.displayName || user.email || '?').charAt(0)).toUpperCase()
+  const color = me ? me.color : 'var(--accent)'
   return (
     <button onClick={() => { if (confirm('¿Cerrar sesión?')) onLogout() }}
       className="btn btn-ghost !p-1.5 !gap-1.5" title={'Salir (' + (user.email || '') + ')'}>
       {user.photoURL ? (
-        <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full" referrerPolicy="no-referrer" />
+        <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full" referrerPolicy="no-referrer"
+          style={{ border: '2px solid ' + color }} />
       ) : (
-        <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style={{ backgroundColor: 'var(--accent)' }}>{initial}</span>
+        <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style={{ backgroundColor: color }}>{initial}</span>
       )}
       <LogOut className="w-4 h-4 hidden sm:inline" />
     </button>

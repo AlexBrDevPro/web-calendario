@@ -3,7 +3,7 @@ import { format, addDays, addMonths, addYears, addWeeks, startOfToday } from 'da
 import { es } from 'date-fns/locale'
 import {
   useEvents, useCategories, useView,
-  useTheme, useCurrentUser, useFilter,
+  useTheme, useFilter,
   migrateOrSeed,
 } from './lib/storage.js'
 import { newEvent, toISO, shiftEventByDays, daysBetween, toggleDoneInstance } from './lib/events.js'
@@ -22,11 +22,11 @@ import ViewerMode from './components/ViewerMode.jsx'
 import MobileTabBar from './components/MobileTabBar.jsx'
 
 export default function App() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, userId, loading: authLoading, logout } = useAuth()
 
   if (authLoading) return <Splash text="Cargando…" />
   if (!user) return <LoginScreen />
-  return <AuthenticatedApp user={user} onLogout={logout} />
+  return <AuthenticatedApp user={user} userId={userId} onLogout={logout} />
 }
 
 function Splash({ text }) {
@@ -40,15 +40,17 @@ function Splash({ text }) {
   )
 }
 
-function AuthenticatedApp({ user, onLogout }) {
+function AuthenticatedApp({ user, userId, onLogout }) {
   const { events, addEvent, updateEvent, deleteEvent: removeEvent, loading: evLoading } = useEvents()
   const { categories, replaceCategories, loading: catLoading } = useCategories()
 
   const [view, setView] = useView()
   const [theme, setTheme] = useTheme()
-  const [currentUser, setCurrentUser] = useCurrentUser()
   const [filter, setFilter] = useFilter()
   const [mode, setMode] = useState('visualizador')
+
+  // currentUser viene del login (no del selector manual)
+  const currentUser = userId || 'alex'
 
   const [selectedDate, setSelectedDate] = useState(startOfToday())
   const [editingEvent, setEditingEvent] = useState(null)
@@ -65,7 +67,6 @@ function AuthenticatedApp({ user, onLogout }) {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
-  // Migración inicial desde localStorage (una vez por dispositivo)
   useEffect(() => {
     migrateOrSeed().then((res) => {
       if (res && res.migrated) console.log('Datos antiguos migrados a Firestore.')
@@ -82,9 +83,10 @@ function AuthenticatedApp({ user, onLogout }) {
 
   function openCreate(dateISO) {
     if (!isEditor) return
+    // Por defecto el evento se crea para "ti", no compartido
     const init = dateISO
-      ? { startDate: dateISO, endDate: dateISO, categoryId: categories[0]?.id || '', owner: 'shared' }
-      : { categoryId: categories[0]?.id || '', owner: 'shared' }
+      ? { startDate: dateISO, endDate: dateISO, categoryId: categories[0]?.id || '', owner: currentUser }
+      : { categoryId: categories[0]?.id || '', owner: currentUser }
     setEditingEvent(newEvent(init))
     setShowEventModal(true)
   }
@@ -162,7 +164,7 @@ function AuthenticatedApp({ user, onLogout }) {
         mode={mode} onModeChange={setMode}
         view={view} onViewChange={setView}
         theme={theme} onThemeToggle={() => setTheme(theme === 'cookie' ? 'dark' : 'cookie')}
-        currentUser={currentUser} onCurrentUserChange={setCurrentUser}
+        currentUser={currentUser}
         filter={filter} onFilterChange={setFilter}
         periodLabel={periodLabel}
         onPrev={() => navigate(-1)} onNext={() => navigate(1)} onToday={goToday}

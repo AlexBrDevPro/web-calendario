@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
-import { auth, googleProvider, ALLOWED_EMAILS } from '../lib/firebase.js'
+import { auth, googleProvider, ALLOWED_EMAILS, userIdFromEmail } from '../lib/firebase.js'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [userId, setUserId] = useState(null)   // 'alex' | 'dalia' | null
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -15,16 +16,18 @@ export function AuthProvider({ children }) {
         const email = (u.email || '').toLowerCase()
         const allowed = ALLOWED_EMAILS.map((e) => e.toLowerCase())
         if (!allowed.includes(email)) {
-          // No autorizado: cerrar sesión y mostrar error
           await signOut(auth)
           setUser(null)
-          setError('Tu cuenta (' + u.email + ') no tiene acceso a este calendario. Habla con el administrador.')
+          setUserId(null)
+          setError('Tu cuenta (' + u.email + ') no tiene acceso a este calendario.')
         } else {
           setUser(u)
+          setUserId(userIdFromEmail(email))
           setError(null)
         }
       } else {
         setUser(null)
+        setUserId(null)
       }
       setLoading(false)
     })
@@ -45,7 +48,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout }}>
+    <AuthContext.Provider value={{ user, userId, loading, error, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

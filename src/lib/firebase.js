@@ -19,14 +19,20 @@ export const googleProvider = new GoogleAuthProvider()
 googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 // =========================================================================
-//  LISTA DE EMAILS AUTORIZADOS
-//  Solo estos correos podrán entrar al calendario. Cualquier otro intento
-//  cerrará la sesión automáticamente.
-//
-//  IMPORTANTE: cuando sepas el email de Dalia, añádelo aquí
-//  Y TAMBIÉN en las reglas de seguridad de Firestore en la consola Firebase.
+//  MAPEO EMAIL → IDENTIDAD
+//  Cada cuenta Google se asocia automáticamente a una identidad del calendario.
+//  Cualquier email que no esté aquí NO podrá entrar.
 // =========================================================================
-export const ALLOWED_EMAILS = [
-  'alejandrobeamud@gmail.com',
-  // 'email-de-dalia@gmail.com', ← AÑADIR aquí
-]
+export const EMAIL_TO_USER = {
+  'alejandrobeamud@gmail.com': 'alex',
+  'elrincondedalia@gmail.com': 'dalia',
+}
+
+// Derivado automáticamente: lista de emails permitidos.
+export const ALLOWED_EMAILS = Object.keys(EMAIL_TO_USER)
+
+// Devuelve el userId ('alex' | 'dalia') a partir del email, o null si no autorizado.
+export function userIdFromEmail(email) {
+  if (!email) return null
+  return EMAIL_TO_USER[email.toLowerCase()] || null
+}
